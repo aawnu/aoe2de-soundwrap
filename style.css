@@ -1,0 +1,64 @@
+:root {
+  --primary: #8d38e6;
+  --shade: #6a24b255;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: calc(90vh - 0.5em);
+}
+
+body {
+  display: flex;
+  align-items: center;
+  font-family: "Protest Strike", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+div#wrapper {
+  padding: 0.25em;
+  color: var(--primary);
+
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+div#status {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.15em;
+  min-width: 1em;
+}
+
+div#status svg {
+  max-height: 0.9em;
+  max-width: 0.9em;
+  display: none;
+
+  fill: var(--primary);
+}
+
+div#wrapper.offline svg.offline {
+  display: block;
+}
+
+div#wrapper.playing svg.playing {
+  display: block;
+}
+
+div#wrapper.paused svg.paused {
+  display: block;
+}
+
+div#taunt {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
