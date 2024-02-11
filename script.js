@@ -4,18 +4,14 @@ const srv = (status, elem, channel) => {
     elem.innerHTML = txt;
   };
   const setLive = () => {
-    console.log("set live: online", status)
     if (!status) return;
-    status.classList.remove("offline")
-    status.classList.add("online")
-    console.log(status)
+    status.classList.remove("offline");
+    status.classList.add("online");
   };
   const setOffline = () => {
-    console.log("set live: offline", status)
     if (!status) return;
-    status.classList.remove("online")
-    status.classList.add("offline")
-    console.log(status)
+    status.classList.remove("online");
+    status.classList.add("offline");
   };
 
   let playing = false;
@@ -260,7 +256,7 @@ const srv = (status, elem, channel) => {
   ws.onclose = (event) => {
     setOffline();
     console.log("onclose", event);
-    setTimeout(srv, 500);
+    setTimeout(srv, 5000);
   };
 
   ws.onerror = (event) => {
@@ -269,8 +265,8 @@ const srv = (status, elem, channel) => {
   };
 
   ws.onmessage = (event) => {
-    if (event.data == "PING :tmi.twitch.tv") {
-      ws.send("PONG :tmi.twitch.tv");
+    if (event.data.substring(0, 4) == "PING") {
+      ws.send("PONG " + event.data.substring(5));
       return;
     }
 
@@ -279,11 +275,11 @@ const srv = (status, elem, channel) => {
       playing = true;
       const sfx = soundLoad[lookup];
       setElem(soundsVoice[lookup]);
+      soundLoad[lookup].play();
       setTimeout(() => {
         playing = false;
         setElem("");
       }, 1000 + sfx.duration);
-      soundLoad[lookup].play();
     }
   };
 };
