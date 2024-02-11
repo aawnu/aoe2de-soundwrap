@@ -1,4 +1,23 @@
-const srv = (channel) => {
+const srv = (status, elem, channel) => {
+  const setElem = (txt) => {
+    if (!elem) return;
+    elem.innerHTML = txt;
+  };
+  const setLive = () => {
+    console.log("set live: online", status)
+    if (!status) return;
+    status.classList.remove("offline")
+    status.classList.add("online")
+    console.log(status)
+  };
+  const setOffline = () => {
+    console.log("set live: offline", status)
+    if (!status) return;
+    status.classList.remove("online")
+    status.classList.add("offline")
+    console.log(status)
+  };
+
   let playing = false;
   const parseMsg = new RegExp(`PRIVMSG #${channel} :(.*)$`, ["gim"]);
 
@@ -221,11 +240,8 @@ const srv = (channel) => {
     ...soundLabel.map((d) => new Audio(`./sfx/${d}.ogg`)),
   ];
 
-  console.log(soundLoad);
-
   const parse = (msg) => {
     const f = parseMsg.exec(msg);
-    console.log("parse", parseMsg, f, msg);
     if (!f || f.length < 2) return "";
     return f[1];
   };
@@ -233,32 +249,40 @@ const srv = (channel) => {
   ws = new WebSocket("ws://irc-ws.chat.twitch.tv:80");
 
   ws.onopen = (event) => {
-    console.log("onopen", event);
     ws.send("CAP REQ :twitch.tv/membership twitch.tv/tags twitch.tv/commands");
     ws.send("PASS listener123");
     ws.send("NICK justinfan1337");
     ws.send("JOIN #" + channel);
+    setElem("");
+    setLive();
   };
 
   ws.onclose = (event) => {
+    setOffline();
     console.log("onclose", event);
     setTimeout(srv, 500);
   };
 
   ws.onerror = (event) => {
+    setOffline();
     console.log("onerror", event);
   };
 
   ws.onmessage = (event) => {
+    if (event.data == "PING :tmi.twitch.tv") {
+      ws.send("PONG :tmi.twitch.tv");
+      return;
+    }
+
     const lookup = parse(event.data);
     if (soundLabel.includes(lookup)) {
       playing = true;
       const sfx = soundLoad[lookup];
-      console.log("Playing", sfx, sfx.duration);
+      setElem(soundsVoice[lookup]);
       setTimeout(() => {
         playing = false;
-        console.log("stopped playing");
-      }, 1 + sfx.duration);
+        setElem("");
+      }, 1000 + sfx.duration);
       soundLoad[lookup].play();
     }
   };

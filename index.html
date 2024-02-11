@@ -2,10 +2,46 @@
   <head>
     <title>Taunts @ Age of Empires 2: Definitive Edition</title>
     <meta name="robots" content="noindex,nofollow" />
-
-    <script src="./script.js"></script>
-    <script defer>
-        srv("didmybestdkk");
-    </script>
+    <style>
+        .offline {
+            display: inline-block;
+            height: 1em;
+            width: 1em;
+            border-radius: .5em;
+            background-color: #f00;
+            margin-right: .5em;
+        }
+        .online {
+            display: inline-block;
+            height: 1em;
+            width: 1em;
+            border-radius: .5em;
+            background-color: #0f0;
+            margin-right: .5em;
+        }
+        .tagline {
+            font-size: calc(80vh - 10px);
+            color: #fff;
+            text-shadow: -2px 2px #00000055;
+            text-shadow: 2px 2px #00000055;
+            text-shadow: -2px -2px #00000055;
+            text-shadow: 2px -2px #00000055;
+            font-weight: 900;
+        }
+        body {
+            display: flex;
+            align-items: center;
+        }
+    </style>
   </head>
+  <body>
+    <span id="status" class="offline">&nbsp;</span>
+    <span id="sound" class="tagline">Loading...</span>
+    <script src="./script.js"></script>
+    <script>
+        const status = document.getElementById("status");
+        const elem = document.getElementById("sound");
+        srv(status, elem, "didmybestdkk");
+    </script>
+  </body>
 </html>
