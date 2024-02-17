@@ -9,31 +9,31 @@ function Taunter() {
   this.offset = 100;
 }
 
-Taunter.prototype.Ready = function () {
+Taunter.prototype.Ready = async function () {
   this.setStatus("paused");
   this.setMessage();
   this.ready = true;
 };
 
-Taunter.prototype.setStatusElement = function (element) {
+Taunter.prototype.setStatusElement = async function (element) {
   this.statusElement = element;
 };
 
-Taunter.prototype.setStatus = function (status) {
+Taunter.prototype.setStatus = async function (status) {
   if (!this.statusElement) return;
   this.statusElement.className = status;
 };
 
-Taunter.prototype.setMessageElement = function (element) {
+Taunter.prototype.setMessageElement = async function (element) {
   this.messageElement = element;
 };
 
-Taunter.prototype.setMessage = function (msg = "") {
+Taunter.prototype.setMessage = async function (msg = "") {
   if (!this.messageElement) return;
   this.messageElement.innerHTML = msg;
 };
 
-Taunter.prototype.QueueSound = function (id) {
+Taunter.prototype.QueueSound = async function (id) {
   if (this.queue.length > 3) return;
   if (isNaN(parseInt(id))) return;
 
@@ -48,7 +48,7 @@ Taunter.prototype.QueueSound = function (id) {
   };
 };
 
-Taunter.prototype.Play = function (chained = false) {
+Taunter.prototype.Play = async function (chained = false) {
   if (!chained && this.playing) return;
   this.playing = true;
 
@@ -71,7 +71,7 @@ Taunter.prototype.Play = function (chained = false) {
   now.sfx.play();
 };
 
-Taunter.prototype.getTauntMessage = function (id) {
+Taunter.prototype.getTauntMessage = async function (id) {
   return (
     {
       1: "Yes",
@@ -184,17 +184,22 @@ Taunter.prototype.getTauntMessage = function (id) {
 };
 
 const srv = (taunter, ...channel) => {
+  const socketUri = {
+    http: "ws://irc-ws.chat.twitch.tv:80",
+    https: "wss://irc-ws.chat.twitch.tv:443",
+  };
+
   const parseMsg = new RegExp(`PRIVMSG #${channel} :(.*)$`, ["gim"]);
 
-  const parse = (msg) => {
+  const parse = async (msg) => {
     const f = parseMsg.exec(msg);
     if (!f || f.length < 2) return "";
     return f[1];
   };
 
-  ws = new WebSocket("ws://irc-ws.chat.twitch.tv:80");
+  ws = new WebSocket(socketUri.https);
 
-  ws.onopen = () => {
+  ws.onopen = async () => {
     // ws.send("CAP REQ :twitch.tv/membership twitch.tv/tags twitch.tv/commands");
     ws.send("PASS listener123");
     ws.send("NICK justinfan1337");
@@ -206,30 +211,28 @@ const srv = (taunter, ...channel) => {
     taunter.Ready();
   };
 
-  ws.onclose = (event) => {
+  ws.onclose = async (event) => {
     changeStatus("offline");
     console.log("onclose", event);
     setTimeout(srv, 5000, taunter, ...channel);
   };
 
-  ws.onerror = (event) => {
+  ws.onerror = async (event) => {
     changeStatus("offline");
     console.log("onerror", event);
     setTimeout(srv, 5000, taunter, ...channel);
   };
 
-  ws.onmessage = (event) => {
+  ws.onmessage = async (event) => {
     if (event.data.substring(0, 4) == "PING") {
       ws.send("PONG " + event.data.substring(5));
       return;
     }
 
-    setTimeout(() => {
-      const lookup = parse(event.data);
-      if (lookup.length > 4) return;
-      if (!isNaN(parseInt(lookup))) {
-        taunter.QueueSound(parseInt(lookup));
-      }
-    }, 0);
+    const lookup = await parse(event.data);
+    if (lookup.length > 4) return;
+    if (!isNaN(parseInt(lookup))) {
+      taunter.QueueSound(parseInt(lookup));
+    }
   };
 };
