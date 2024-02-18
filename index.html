@@ -55,5 +55,18 @@
       
       srv(taunter, "didmybestdkk")
     </script>
+  <script>
+    let version = null
+    setInterval(async () => {
+      const f = await fetch("./v.json")
+      const j = await f.json()
+
+      if (version == null) {
+        version = j.v
+      } else if (version !== j.v) {
+        window.location.reload()
+      }
+    }, 10 * 60 * 1000)
+  </script>
   </body>
 </html>
