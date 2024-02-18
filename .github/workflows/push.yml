@@ -24,4 +24,4 @@ jobs:
           remote-password: ${{ secrets.DIDMYBEST_PASSWORD }}
           remote-path: "/var/www/didmybest.dk/sub_aoe_sfx"
           ssh-private-key: ${{ secrets.DIDMYBEST_SSH_KEY }}
-          sync: "full"
+          sync: "delta"
