@@ -1,0 +1,25 @@
+name: "Push changes to didmybest host"
+
+on:
+  push:
+    branches:
+      - "master"
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: SFTP
+        uses: milanmk/actions-file-deployer@latest
+        with:
+          remote-host: ${{ secrets.DIDMYBEST_HOST }}
+          remote-port: 22
+          remote-user: ${{ secrets.DIDMYBEST_USERNAME }}
+          remote-password: ${{ secrets.DIDMYBEST_PASSWORD }}
+          remote-path: "/var/www/didmybest.dk/sub_aoe_sfx"
+          ssh-private-key: ${{ secrets.DIDMYBEST_SSH_KEY }}
+          sync: "full"
