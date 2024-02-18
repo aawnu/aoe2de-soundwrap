@@ -14,7 +14,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: SFTP
-        uses: milanmk/actions-file-deployer@latest
+        uses: milanmk/actions-file-deployer@v1
         with:
           remote-host: ${{ secrets.DIDMYBEST_HOST }}
           remote-port: 22
