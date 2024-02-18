@@ -13,8 +13,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - name: "Modify Version"
-        run: echo '{"v":"'$(date +%s%N)'"}' > v.json
       - name: SFTP
         uses: milanmk/actions-file-deployer@master
         with:
@@ -25,3 +23,17 @@ jobs:
           remote-path: "/var/www/didmybest.dk/sub_aoe_sfx"
           ssh-private-key: ${{ secrets.DIDMYBEST_SSH_KEY }}
           sync: "delta"
+  update:
+    needs: upload
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH
+        uses: garygrossgarten/github-action-ssh@release
+        with:
+          host: ${{ secrets.DIDMYBEST_HOST }}
+          username: ${{ secrets.DIDMYBEST_USERNAME }}
+          password: ${{ secrets.DIDMYBEST_PASSWORD }}
+          privateKey: ${{ secrets.DIDMYBEST_SSH_KEY}}
+          command: |
+            cd /var/www/didmybest.dk/sub_aoe_sfx
+            echo '{"v":"'$(date +%s%N)'"}' > v.json
