@@ -38,9 +38,9 @@ Taunter.prototype.QueueSound = async function (id) {
   if (isNaN(parseInt(id))) return;
 
   const sfx = new Audio(`./sfx/${id}.ogg`);
-  sfx.oncanplaythrough = () => {
+  sfx.oncanplaythrough = async () => {
     this.queue.push({
-      msg: this.getTauntMessage(id),
+      msg: await this.getTauntMessage(id),
       sfx: sfx,
     });
 
