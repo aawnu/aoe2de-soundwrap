@@ -37,4 +37,3 @@ jobs:
           command: |
             cd /var/www/didmybest.dk/sub_aoe_sfx
             echo '{"v":"'$(date +%s%N)'"}' > v.json
-            cat v.json
