@@ -1,76 +1,101 @@
 function Taunter() {
-  this.ready = false;
+  this.ready = false
 
-  this.statusElement;
-  this.messageElement;
+  this.statusElement
+  this.messageElement
 
-  this.queue = [];
-  this.playing = false;
-  this.offset = 100;
+  this.playing = false
 }
 
-Taunter.prototype.Ready = async function () {
-  this.setStatus("paused");
-  this.setMessage();
-  this.ready = true;
-};
+/**
+ * @returns
+ */
+Taunter.prototype.Ready = function () {
+  this.setStatus("paused")
+  this.setMessage()
+  this.ready = true
+}
 
-Taunter.prototype.setStatusElement = async function (element) {
-  this.statusElement = element;
-};
+/**
+ * @param {HTMLElement} element
+ */
+Taunter.prototype.setStatusElement = function (element) {
+  this.statusElement = element
+}
 
-Taunter.prototype.setStatus = async function (status) {
-  if (!this.statusElement) return;
-  this.statusElement.className = status;
-};
+/**
+ *
+ * @param {"paused"|"playing"|"offline"} status
+ * @returns
+ */
+Taunter.prototype.setStatus = function (status) {
+  if (!this.statusElement) return
+  this.statusElement.className = status
+}
 
-Taunter.prototype.setMessageElement = async function (element) {
-  this.messageElement = element;
-};
+/**
+ * @param {HTMLElement} element
+ */
+Taunter.prototype.setMessageElement = function (element) {
+  this.messageElement = element
+}
 
-Taunter.prototype.setMessage = async function (msg = "") {
-  if (!this.messageElement) return;
-  this.messageElement.innerHTML = msg;
-};
+/**
+ * @param {string} msg
+ * @returns
+ */
+Taunter.prototype.setMessage = function (msg = "") {
+  if (!this.messageElement) return
+  this.messageElement.innerHTML = msg
+}
 
-Taunter.prototype.QueueSound = async function (id) {
-  if (this.queue.length > 3) return;
-  if (isNaN(parseInt(id))) return;
-
-  const sfx = new Audio(`./sfx/${id}.ogg`);
-  sfx.oncanplaythrough = () => {
-    this.queue.push({
-      msg: this.getTauntMessage(id),
-      sfx: sfx,
-    });
-
-    if (!this.playing) this.Play();
-  };
-};
-
-Taunter.prototype.Play = async function (chained = false) {
-  if (!chained && this.playing) return;
-  this.playing = true;
-
-  now = this.queue.shift();
-  if (!now) {
-    this.playing = false;
-    this.setStatus("paused");
-    return;
+/**
+ *
+ * @param {number} id
+ * @returns {Promise<void>}
+ */
+Taunter.prototype.QueueSound = function (id) {
+  if (isNaN(id)) {
+    console.log("QueueSound:NaN")
+    return
+  }
+  if (this.playing) {
+    console.log("QueueSound:Playing")
+    return
   }
 
-  setTimeout(() => {
-    this.setMessage();
-    setTimeout(() => {
-      this.Play(true);
-    }, 100);
-  }, this.offset + now.sfx.duration * 1000);
+  const me = this
 
-  this.setStatus("playing");
-  this.setMessage(now.msg);
-  now.sfx.play();
-};
+  /** @type {string} */
+  const url = `./sfx/${id}.ogg`
 
+  /** @type {string} */
+  const msg = this.getTauntMessage(id)
+
+  /** @type {HTMLAudioElement} */
+  const sfx = new Audio()
+
+  sfx.onended = function () {
+    me.setStatus("paused")
+    me.setMessage()
+    me.playing = false
+  }
+
+  sfx.oncanplaythrough = function () {
+    me.setStatus("playing")
+    me.playing = true
+    me.setMessage(msg)
+    sfx.play()
+  }
+
+  sfx.src = url
+}
+
+/**
+ *
+ * @param {number} id
+ * @returns {string}
+ */
 Taunter.prototype.getTauntMessage = function (id) {
   return (
     {
@@ -180,59 +205,85 @@ Taunter.prototype.getTauntMessage = function (id) {
       104: "Don't Resign",
       105: "You can Resign Now",
     }[id] || ""
-  );
-};
+  )
+}
 
+/**
+ *
+ * @param {Taunter} taunter
+ * @param  {...string} channel
+ */
 const srv = (taunter, ...channel) => {
   const socketUri = {
     http: "ws://irc-ws.chat.twitch.tv:80",
     https: "wss://irc-ws.chat.twitch.tv:443",
-  };
+  }
 
-  const parseMsg = new RegExp(`PRIVMSG #${channel} :(.*)$`, ["gim"]);
+  let parseRotator = 1
 
+  /** @type {Record<number,RegExp>} */
+  const parseMsg = {
+    1: new RegExp(`PRIVMSG #[a-zA-Z0-9\-\_]+ :([0-9\n]+)$`, ["gim"]),
+    2: new RegExp(`PRIVMSG #[a-zA-Z0-9\-\_]+ :([0-9\n]+)$`, ["gim"]),
+    3: new RegExp(`PRIVMSG #[a-zA-Z0-9\-\_]+ :([0-9\n]+)$`, ["gim"]),
+  }
+
+  /**
+   * @param {string} msg
+   * @returns {Promise<number>}
+   */
   const parse = async (msg) => {
-    const f = parseMsg.exec(msg);
-    if (!f || f.length < 2) return "";
-    return f[1];
-  };
+    const parser = parseMsg[parseRotator]
+    parseRotator = parseRotator++
+    if (parseRotator > 3) {
+      parseRotator = 1
+    }
 
-  ws = new WebSocket(socketUri.https);
+    const f = parser.exec(msg)
+    if (!f || f.length < 2) return NaN
+    return parseInt(f[1])
+  }
+
+  /** @type {WebSocket} */
+  const ws = new WebSocket(socketUri.https)
 
   ws.onopen = async () => {
     // ws.send("CAP REQ :twitch.tv/membership twitch.tv/tags twitch.tv/commands");
-    ws.send("PASS listener123");
-    ws.send("NICK justinfan1337");
+    ws.send("PASS listener123")
+    ws.send("NICK justinfan1337")
 
     channel.forEach((chan) => {
-      ws.send("JOIN #" + chan);
-    });
+      ws.send("JOIN #" + chan)
+    })
 
-    taunter.Ready();
-  };
+    taunter.Ready()
+  }
 
   ws.onclose = async (event) => {
-    changeStatus("offline");
-    console.log("onclose", event);
-    setTimeout(srv, 5000, taunter, ...channel);
-  };
+    taunter.setStatus("offline")
+    console.log("onclose", event)
+    setTimeout(srv, 5000, taunter, ...channel)
+  }
 
   ws.onerror = async (event) => {
-    changeStatus("offline");
-    console.log("onerror", event);
-    setTimeout(srv, 5000, taunter, ...channel);
-  };
+    taunter.setStatus("offline")
+    console.log("onerror", event)
+    setTimeout(srv, 5000, taunter, ...channel)
+  }
 
-  ws.onmessage = async (event) => {
-    if (event.data.substring(0, 4) == "PING") {
-      ws.send("PONG " + event.data.substring(5));
-      return;
+  ws.onmessage = (event) => {
+    /** @type {string} */
+    const data = event.data ?? ""
+
+    if (data.substring(0, 4) == "PING") {
+      ws.send("PONG " + data.substring(5))
+      return
     }
 
-    const lookup = await parse(event.data);
-    if (lookup.length > 4) return;
-    if (!isNaN(parseInt(lookup))) {
-      taunter.QueueSound(parseInt(lookup));
-    }
-  };
-};
+    parse(data).then((n) => {
+      if (!isNaN(n)) {
+        taunter.QueueSound(n)
+      }
+    })
+  }
+}

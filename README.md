@@ -6,7 +6,7 @@ This tool is originally developed for [Didmybestdkk](https://www.twitch.tv/didmy
 
 ## Taunts
 
-The number matches the filename inside sfx/*.ogg
+The number matches the filename inside sfx/\*.ogg
 
 1. Yes
 2. No
