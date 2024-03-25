@@ -1,10 +1,42 @@
 function Taunter() {
+  /** @type {boolean} */
   this.ready = false
 
+  /** @type {HTMLElement} */
   this.statusElement
+
+  /** @type {HTMLElement} */
   this.messageElement
 
+  /** @type {boolean} */
   this.playing = false
+
+  /** @type {?string} */
+  this.msg = null
+
+  /** @type {HTMLAudioElement} */
+  const player = new Audio()
+
+  player.onended = () => {
+    this.setStatus("paused")
+    this.setMessage()
+    this.playing = false
+  }
+
+  player.oncanplaythrough = () => {
+    if (player.duration > 0) {
+      player.play()
+    }
+  }
+
+  player.onplay = () => {
+    this.setStatus("playing")
+    this.setMessage(this.msg)
+    this.playing = true
+  }
+
+  /** @type {HTMLAudioElement} */
+  this.player = player
 }
 
 /**
@@ -64,31 +96,18 @@ Taunter.prototype.QueueSound = function (id) {
     return
   }
 
-  const me = this
-
   /** @type {string} */
   const url = `./sfx/${id}.ogg`
 
-  /** @type {string} */
-  const msg = this.getTauntMessage(id)
-
-  /** @type {HTMLAudioElement} */
-  const sfx = new Audio()
-
-  sfx.onended = function () {
-    me.setStatus("paused")
-    me.setMessage()
-    me.playing = false
+  if (this.player.src.endsWith(url.substring(1))) {
+    console.log("Replay", this.player.src)
+    this.player.play()
+    return
   }
 
-  sfx.oncanplaythrough = function () {
-    me.setStatus("playing")
-    me.playing = true
-    me.setMessage(msg)
-    sfx.play()
-  }
-
-  sfx.src = url
+  console.log("new", url)
+  this.msg = this.getTauntMessage(id)
+  this.player.src = url
 }
 
 /**
@@ -219,27 +238,13 @@ const srv = (taunter, ...channel) => {
     https: "wss://irc-ws.chat.twitch.tv:443",
   }
 
-  let parseRotator = 1
-
-  /** @type {Record<number,RegExp>} */
-  const parseMsg = {
-    1: new RegExp(`PRIVMSG #[a-zA-Z0-9\-\_]+ :([0-9\n]+)$`, ["gim"]),
-    2: new RegExp(`PRIVMSG #[a-zA-Z0-9\-\_]+ :([0-9\n]+)$`, ["gim"]),
-    3: new RegExp(`PRIVMSG #[a-zA-Z0-9\-\_]+ :([0-9\n]+)$`, ["gim"]),
-  }
-
   /**
    * @param {string} msg
    * @returns {Promise<number>}
    */
   const parse = async (msg) => {
-    const parser = parseMsg[parseRotator]
-    parseRotator = parseRotator++
-    if (parseRotator > 3) {
-      parseRotator = 1
-    }
-
-    const f = parser.exec(msg)
+    const f = new RegExp(`PRIVMSG #[a-zA-Z0-9\-\_]+ :([0-9\n]+)$`, ["gim"]).exec(msg)
+    console.log("parsing %s from %s", f, msg)
     if (!f || f.length < 2) return NaN
     return parseInt(f[1])
   }
@@ -271,7 +276,7 @@ const srv = (taunter, ...channel) => {
     setTimeout(srv, 5000, taunter, ...channel)
   }
 
-  ws.onmessage = (event) => {
+  ws.onmessage = async (event) => {
     /** @type {string} */
     const data = event.data ?? ""
 
