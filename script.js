@@ -8,9 +8,6 @@ function Taunter() {
   /** @type {HTMLElement} */
   this.messageElement
 
-  /** @type {boolean} */
-  this.playing = false
-
   /** @type {?string} */
   this.msg = null
 
@@ -20,7 +17,6 @@ function Taunter() {
   player.onended = () => {
     this.setStatus("paused")
     this.setMessage()
-    this.playing = false
   }
 
   player.oncanplaythrough = () => {
@@ -32,7 +28,6 @@ function Taunter() {
   player.onplay = () => {
     this.setStatus("playing")
     this.setMessage(this.msg)
-    this.playing = true
   }
 
   /** @type {HTMLAudioElement} */
@@ -87,14 +82,8 @@ Taunter.prototype.setMessage = function (msg = "") {
  * @returns {Promise<void>}
  */
 Taunter.prototype.QueueSound = function (id) {
-  if (isNaN(id)) {
-    console.log("QueueSound:NaN")
-    return
-  }
-  if (this.playing) {
-    console.log("QueueSound:Playing")
-    return
-  }
+  if (isNaN(id)) return
+  if (!this.player.ended && this.player.currentTime != 0) return
 
   /** @type {string} */
   const url = `./sfx/${id}.ogg`
@@ -105,7 +94,6 @@ Taunter.prototype.QueueSound = function (id) {
     return
   }
 
-  console.log("new", url)
   this.msg = this.getTauntMessage(id)
   this.player.src = url
 }
@@ -244,7 +232,6 @@ const srv = (taunter, ...channel) => {
    */
   const parse = async (msg) => {
     const f = new RegExp(`PRIVMSG #[a-zA-Z0-9\-\_]+ :([0-9\n]+)$`, ["gim"]).exec(msg)
-    console.log("parsing %s from %s", f, msg)
     if (!f || f.length < 2) return NaN
     return parseInt(f[1])
   }
